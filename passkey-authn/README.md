@@ -62,7 +62,7 @@ You need a local web server (file:// won't work due to OAuth redirects).
 Use [uv](https://github.com/astral-sh/uv) to run Python's HTTP server:
 
 ```bash
-uv run --with http.server python -m http.server 3000
+uv run python -m http.server 3000
 ```
 
 ### 4. Test
