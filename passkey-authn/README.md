@@ -35,22 +35,23 @@ Before you begin, ensure you have:
 
 ### 1. Deploy CloudFormation Stack
 
+**Important:** Choose a **globally unique** stack name - it will be used as your Cognito domain prefix (e.g., `my-app-20260215` instead of `cognito-passkey`).
+
 ```bash
 aws cloudformation deploy \
   --template-file cognito-passkey.yaml \
-  --stack-name cognito-passkey \
+  --stack-name YOUR-UNIQUE-NAME-HERE \
   --parameter-overrides \
-    DomainPrefix=your-unique-prefix \
     CallbackURL=http://localhost:3000/callback.html \
     LogoutURL=http://localhost:3000/
 ```
 
 ### 2. Generate Configuration
 
-Run the update script to fetch configuration from your CloudFormation stack:
+Run the update script with your stack name:
 
 ```bash
-./update-config.sh your-stack-name
+./update-config.sh YOUR-UNIQUE-NAME-HERE
 ```
 
 This automatically generates `config.js` with your Cognito domain and client ID.
