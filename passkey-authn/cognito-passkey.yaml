@@ -1,0 +1,233 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Cognito User Pool with Passkey (WebAuthn) authentication
+  using the new Managed Login UI (version 2).
+
+Parameters:
+  CallbackURL:
+    Type: String
+    Default: https://localhost:3000/callback
+    Description: OAuth callback URL for the application
+
+  LogoutURL:
+    Type: String
+    Default: https://localhost:3000/logout
+    Description: OAuth logout URL for the application
+
+Resources:
+
+  # -------------------------------------------------
+  # Cognito User Pool — Essentials tier with Passkey
+  # -------------------------------------------------
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolTier: ESSENTIALS
+
+      # Allow users to sign up with their email as username
+      UsernameAttributes:
+        - email
+      UsernameConfiguration:
+        CaseSensitive: false
+      AutoVerifiedAttributes:
+        - email
+
+      # Sign-in policy: enable Passkey (WEB_AUTHN) and password
+      # Note: PASSWORD is required by Cognito even for passkey-only setups
+      # Users created without passwords can only use passkeys
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+        SignInPolicy:
+          AllowedFirstAuthFactors:
+            - WEB_AUTHN
+            - PASSWORD
+
+      # WebAuthn/Passkey configuration - require user verification (biometric/PIN)
+      WebAuthnUserVerification: required
+
+      # Account recovery via verified email
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+
+      # Require email at sign-up
+      # Note: Custom attributes below were added for Lambda trigger (now removed)
+      # but cannot be deleted from existing user pool - Cognito limitation
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+        - Name: auth_method
+          AttributeDataType: String
+          Mutable: true
+        - Name: trigger_source
+          AttributeDataType: String
+          Mutable: true
+        - Name: auth_time
+          AttributeDataType: String
+          Mutable: true
+
+      # Only admins can create users
+      # New users register passkeys via /passkeys/add URL
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+
+      # Require verification when users update their email
+      UserAttributeUpdateSettings:
+        AttributesRequireVerificationBeforeUpdate:
+          - email
+
+      DeletionProtection: INACTIVE
+
+  # -------------------------------------------------
+  # User Pool Domain — Managed Login v2 (NOT legacy Hosted UI)
+  # -------------------------------------------------
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      UserPoolId: !Ref UserPool
+      Domain: !Ref AWS::StackName
+      # Version 2 = new Managed Login UI
+      # Version 1 = legacy Hosted UI (classic)
+      ManagedLoginVersion: 2
+
+  # -------------------------------------------------
+  # App Client — choice-based auth with USER_AUTH flow
+  # -------------------------------------------------
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false
+
+      # ALLOW_USER_AUTH enables choice-based sign-in (passkeys, passwordless, password)
+      ExplicitAuthFlows:
+        - ALLOW_USER_AUTH
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+
+      # OAuth / OIDC configuration for Managed Login
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - openid
+        - email
+        - profile
+
+      SupportedIdentityProviders:
+        - COGNITO
+
+      CallbackURLs:
+        - !Ref CallbackURL
+      LogoutURLs:
+        - !Ref LogoutURL
+
+      PreventUserExistenceErrors: ENABLED
+
+      # Token validity
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+
+  # -------------------------------------------------
+  # Managed Login Branding — Custom styling
+  # -------------------------------------------------
+  ManagedLoginBranding:
+    Type: AWS::Cognito::ManagedLoginBranding
+    DependsOn: UserPoolDomain
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientId: !Ref UserPoolClient
+      UseCognitoProvidedValues: false
+      Settings:
+        components:
+          pageBackground:
+            image:
+              enabled: false
+            lightMode:
+              color: 11053bcc
+            darkMode:
+              color: 0f1b2aff
+          form:
+            borderRadius: 8
+            backgroundImage:
+              enabled: false
+          alert:
+            borderRadius: 12
+        componentClasses:
+          buttons:
+            borderRadius: 8
+          input:
+            borderRadius: 8
+          dropDown:
+            borderRadius: 8
+        categories:
+          global:
+            colorSchemeMode: LIGHT
+            pageHeader:
+              enabled: false
+            pageFooter:
+              enabled: false
+            spacingDensity: REGULAR
+          form:
+            sessionTimerDisplay: NONE
+            instructions:
+              enabled: false
+            languageSelector:
+              enabled: false
+            displayGraphics: true
+            location:
+              horizontal: CENTER
+              vertical: CENTER
+          auth:
+            authMethodOrder:
+              - - display: BUTTON
+                  type: FEDERATED
+                - display: INPUT
+                  type: USERNAME_PASSWORD
+
+Outputs:
+  UserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref UserPool
+    Export:
+      Name: !Sub '${AWS::StackName}-UserPoolId'
+
+  UserPoolArn:
+    Description: Cognito User Pool ARN
+    Value: !GetAtt UserPool.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-UserPoolArn'
+
+  AppClientId:
+    Description: App Client ID
+    Value: !Ref UserPoolClient
+    Export:
+      Name: !Sub '${AWS::StackName}-AppClientId'
+
+  CognitoDomain:
+    Description: Full Cognito Managed Login domain
+    Value: !Sub "https://${UserPoolDomain}.auth.${AWS::Region}.amazoncognito.com"
+    Export:
+      Name: !Sub '${AWS::StackName}-CognitoDomain'
+
+  LoginURL:
+    Description: URL to the Managed Login page
+    Value: !Sub >-
+      https://${UserPoolDomain}.auth.${AWS::Region}.amazoncognito.com/oauth2/authorize?response_type=code&client_id=${UserPoolClient}&redirect_uri=${CallbackURL}&scope=openid+email+profile
+
+  ManagedLoginBrandingId:
+    Description: ID of the managed login branding style
+    Value: !GetAtt ManagedLoginBranding.ManagedLoginBrandingId

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Your Passkey</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .info-box {
+            padding: 20px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        code {
+            background: #e0e0e0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Register Your Passkey</h1>
+
+    <div class="info-box">
+        <p>You've been invited to use this application with passkey authentication!</p>
+
+        <h3>What's a Passkey?</h3>
+        <p>A passkey lets you sign in using your fingerprint, face, or device PIN instead of a password. It's more secure and easier to use.</p>
+
+        <h3>Steps:</h3>
+        <ol>
+            <li>Click the button below to register your passkey</li>
+            <li>Sign in with your temporary password (check your email)</li>
+            <li>Follow the prompts to create your passkey</li>
+            <li>Next time, sign in with just your fingerprint or face!</li>
+        </ol>
+
+        <button onclick="registerPasskey()">Register Passkey Now</button>
+    </div>
+
+    <div class="info-box">
+        <h3>For Administrators</h3>
+        <p>After creating a user, send them this URL:</p>
+        <code id="register-url">Loading...</code>
+        <button onclick="copyURL()">Copy URL</button>
+    </div>
+
+    <script type="module">
+        import { CONFIG } from './config.js';
+
+        // Build the passkey registration URL
+        const passkeyRegisterURL = `https://${CONFIG.domain}/passkeys/add?` + new URLSearchParams({
+            client_id: CONFIG.clientId,
+            redirect_uri: CONFIG.redirectUri,
+            response_type: 'code',
+            scope: 'openid email profile'
+        }).toString();
+
+        document.getElementById('register-url').textContent = passkeyRegisterURL;
+
+        window.registerPasskey = function() {
+            window.location.href = passkeyRegisterURL;
+        };
+
+        window.copyURL = function() {
+            navigator.clipboard.writeText(passkeyRegisterURL);
+            alert('URL copied to clipboard!');
+        };
+    </script>
+</body>
+</html>
