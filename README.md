@@ -59,16 +59,6 @@ cognito-snippets/
 
 Additional examples for social login, MFA, and custom authentication flows may be added in the future.
 
-## Contributing
-
-Contributions are welcome! If you have a useful Cognito pattern or example to share:
-
-1. Create a new directory for your snippet
-2. Include a complete README with setup instructions
-3. Ensure code is self-contained and working
-4. Document key learnings and limitations
-5. Submit a pull request
-
 ## License
 
 MIT-0 - Use these snippets freely without attribution requirements.
