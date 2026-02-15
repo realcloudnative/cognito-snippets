@@ -59,8 +59,6 @@ You'll need:
 
 ### 3. Generate Configuration
 
-**Option A: Auto-generate from CloudFormation** (recommended)
-
 Run the update script to fetch configuration from your CloudFormation stack:
 
 ```bash
@@ -68,17 +66,6 @@ Run the update script to fetch configuration from your CloudFormation stack:
 ```
 
 This automatically generates `config.js` with your Cognito domain and client ID.
-
-**Option B: Manual configuration**
-
-Copy the example config and fill in your values:
-
-```bash
-cp config.example.js config.js
-# Edit config.js with your actual Cognito domain and client ID
-```
-
-**Note:** `config.js` is gitignored to prevent committing credentials.
 
 ### 4. Run Local Server
 
