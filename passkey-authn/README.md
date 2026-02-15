@@ -9,6 +9,7 @@ Before you begin, ensure you have:
 - **AWS Account** with permissions to create Cognito resources
 - **AWS CLI** installed and configured (`aws configure`)
   - Minimum version: 2.0 (for Cognito passkey support)
+- **uv** - Fast Python package manager ([installation guide](https://github.com/astral-sh/uv))
 - **Modern web browser** with WebAuthn support
   - Chrome 61+, Firefox 60+, Safari 11+, or Edge 79+
 - **Basic knowledge** of:
@@ -83,20 +84,17 @@ cp config.example.js config.js
 
 You need a local web server (file:// won't work due to OAuth redirects).
 
-**Option A: Python**
+Use `uv` to run Python's HTTP server:
+
 ```bash
-python3 -m http.server 3000
+# Install uv if you haven't already
+# See: https://github.com/astral-sh/uv
+
+# Run local server on port 3000
+uv run --with http.server python -m http.server 3000
 ```
 
-**Option B: Node.js**
-```bash
-npx http-server -p 3000
-```
-
-**Option C: PHP**
-```bash
-php -S localhost:3000
-```
+This uses `uv` to manage Python execution without needing to install Python globally.
 
 ### 5. Test
 
