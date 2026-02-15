@@ -46,7 +46,19 @@ aws cloudformation deploy \
     LogoutURL=http://localhost:3000/
 ```
 
-### 2. Generate Configuration
+### 2. Create Users (Admin Console)
+
+**This template is configured for admin interfaces, not public websites.** Self-registration is disabled.
+
+Create users via the AWS Cognito console:
+1. Navigate to your User Pool in the AWS Console
+2. Users → Create user
+3. Set email and temporary password
+4. User will be prompted to change password on first login
+
+**For public websites:** To enable self-registration, modify the CloudFormation template and set `AllowAdminCreateUserOnly: false` in the UserPool resource.
+
+### 3. Generate Configuration
 
 Run the update script with your stack name:
 
@@ -56,7 +68,7 @@ Run the update script with your stack name:
 
 This automatically generates `config.js` with your Cognito domain and client ID.
 
-### 3. Run Local Server
+### 4. Run Local Server
 
 You need a local web server (file:// won't work due to OAuth redirects).
 
@@ -66,7 +78,7 @@ Use [uv](https://github.com/astral-sh/uv) to run Python's HTTP server:
 uv run python -m http.server 3000
 ```
 
-### 4. Test
+### 5. Test
 
 1. Open http://localhost:3000
 2. Click "Login with Passkey"
