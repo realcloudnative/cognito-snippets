@@ -45,19 +45,7 @@ aws cloudformation deploy \
     LogoutURL=http://localhost:3000/
 ```
 
-### 2. Get Stack Outputs
-
-```bash
-aws cloudformation describe-stacks \
-  --stack-name cognito-passkey \
-  --query 'Stacks[0].Outputs'
-```
-
-You'll need:
-- `CognitoDomain` (e.g., `your-prefix.auth.us-east-1.amazoncognito.com`)
-- `AppClientId` (e.g., `abc123def456...`)
-
-### 3. Generate Configuration
+### 2. Generate Configuration
 
 Run the update script to fetch configuration from your CloudFormation stack:
 
@@ -67,7 +55,7 @@ Run the update script to fetch configuration from your CloudFormation stack:
 
 This automatically generates `config.js` with your Cognito domain and client ID.
 
-### 4. Run Local Server
+### 3. Run Local Server
 
 You need a local web server (file:// won't work due to OAuth redirects).
 
@@ -77,7 +65,7 @@ Use [uv](https://github.com/astral-sh/uv) to run Python's HTTP server:
 uv run --with http.server python -m http.server 3000
 ```
 
-### 5. Test
+### 4. Test
 
 1. Open http://localhost:3000
 2. Click "Login with Passkey"
