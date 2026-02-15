@@ -2,6 +2,10 @@
 
 A vanilla JavaScript implementation of Amazon Cognito authentication with passkey support. **Zero dependencies**.
 
+> [!NOTE]
+> **AI-Generated Code**
+> This example was created by Claude Code with minimal human oversight. Review thoroughly before production use.
+
 ## Prerequisites
 
 Before you begin, ensure you have:
