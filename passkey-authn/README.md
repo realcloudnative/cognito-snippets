@@ -1,6 +1,6 @@
 # Minimalistic Cognito Passkey Web App
 
-A vanilla JavaScript implementation of AWS Cognito authentication with passkey support. **Zero dependencies**.
+A vanilla JavaScript implementation of Amazon Cognito authentication with passkey support. **Zero dependencies**.
 
 ## Prerequisites
 
@@ -12,7 +12,7 @@ Before you begin, ensure you have:
 - **Modern web browser** with WebAuthn support
   - Chrome 61+, Firefox 60+, Safari 11+, or Edge 79+
 - **Basic knowledge** of:
-  - AWS Cognito User Pools
+  - Amazon Cognito User Pools
   - OAuth 2.0 authorization code flow
   - WebAuthn/passkeys concepts
 
@@ -339,7 +339,7 @@ For production use, consider:
 
 ### Need Help?
 
-- Check the [AWS Cognito documentation](https://docs.aws.amazon.com/cognito/)
+- Check the [Amazon Cognito documentation](https://docs.aws.amazon.com/cognito/)
 - Review CloudFormation stack events for deployment errors
 - Enable browser developer console to see detailed errors
 - Verify AWS CLI version supports Cognito passkeys (`aws --version`)

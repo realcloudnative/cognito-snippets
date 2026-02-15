@@ -1,16 +1,20 @@
 # Cognito Snippets
 
-Reusable code snippets demonstrating AWS Cognito authentication patterns and features.
+Reusable code snippets demonstrating Amazon Cognito authentication patterns and features.
+
+> [!NOTE]
+> **Made with ❤️ by Claude Code**
+> This repository was created by an AI coding agent with minimal human oversight. The code examples, documentation, and infrastructure templates were generated to demonstrate Amazon Cognito patterns and their limitations. While functional and tested, please review thoroughly before production use.
 
 ## Purpose
 
-This repository provides **ready-to-use examples** for implementing various AWS Cognito authentication patterns. Each snippet is a self-contained, working example that you can learn from, adapt, or use as a starting point for your projects.
+This repository provides **ready-to-use examples** for implementing various Amazon Cognito authentication patterns. Each snippet is a self-contained, working example that you can learn from, adapt, or use as a starting point for your projects.
 
 ## Available Snippets
 
 ### [Passkey Authentication](./passkey-authn/)
 
-Demonstrates **passkey (WebAuthn) authentication** with AWS Cognito User Pools using Managed Login v2.
+Demonstrates **passkey (WebAuthn) authentication** with Amazon Cognito User Pools using Managed Login v2.
 
 **Includes:**
 - CloudFormation template for Cognito setup
@@ -23,13 +27,6 @@ Demonstrates **passkey (WebAuthn) authentication** with AWS Cognito User Pools u
 [View full documentation →](./passkey-authn/README.md)
 
 ---
-
-## Coming Soon
-
-- **Social Login** - OAuth integration with Google, Facebook, Amazon
-- **MFA Setup** - TOTP, SMS, and email-based MFA
-- **Custom Authentication** - Lambda triggers and custom auth flows
-- **User Migration** - Migrating users from other identity providers
 
 ## Getting Started
 
@@ -46,7 +43,7 @@ Browse to any snippet directory and follow the README to get started.
 - AWS account with appropriate permissions
 - AWS CLI configured (`aws configure`)
 - Modern web browser with WebAuthn support (for passkey examples)
-- Basic knowledge of AWS Cognito and OAuth 2.0
+- Basic knowledge of Amazon Cognito and OAuth 2.0
 
 ## Repository Structure
 
@@ -57,10 +54,10 @@ cognito-snippets/
 │   ├── cognito-passkey.yaml
 │   ├── index.html
 │   └── ...
-├── social-login/            # Coming soon
-├── mfa-setup/               # Coming soon
 └── README.md                # This file
 ```
+
+Additional examples for social login, MFA, and custom authentication flows may be added in the future.
 
 ## Contributing
 
@@ -78,7 +75,7 @@ MIT-0 - Use these snippets freely without attribution requirements.
 
 ## Related Resources
 
-- [AWS Cognito Documentation](https://docs.aws.amazon.com/cognito/)
+- [Amazon Cognito Documentation](https://docs.aws.amazon.com/cognito/)
 - [OAuth 2.0 Specification](https://oauth.net/2/)
 - [WebAuthn Guide](https://webauthn.guide/)
 
