@@ -3,7 +3,7 @@
 Reusable code snippets demonstrating Amazon Cognito authentication patterns and features.
 
 > [!NOTE]
-> **Made with ❤️ by Claude Code**
+> **Made with ❤️  by Claude Code**
 > This repository was created by an AI coding agent with minimal human oversight. The code examples, documentation, and infrastructure templates were generated to demonstrate Amazon Cognito patterns and their limitations. While functional and tested, please review thoroughly before production use.
 
 ## Purpose
