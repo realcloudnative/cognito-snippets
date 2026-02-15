@@ -53,18 +53,22 @@ The template currently enables `WEB_AUTHN` and `PASSWORD`.
 
 | Parameter | Default | Description |
 |---|---|---|
-| `UserPoolName` | `PasskeyUserPool` | Name of the user pool |
-| `DomainPrefix` | *(required)* | Globally unique prefix for the Cognito domain |
 | `CallbackURL` | `https://localhost:3000/callback` | OAuth callback URL |
 | `LogoutURL` | `https://localhost:3000/logout` | OAuth logout URL |
 
+**Note:** The stack name is used as the Cognito domain prefix and must be globally unique.
+
 ## Deployment
+
+**Important:** Choose a globally unique stack name - it becomes your Cognito domain prefix.
 
 ```bash
 aws cloudformation deploy \
   --template-file cognito-passkey.yaml \
-  --stack-name cognito-passkey \
-  --parameter-overrides DomainPrefix=my-unique-prefix
+  --stack-name YOUR-UNIQUE-NAME-HERE \
+  --parameter-overrides \
+    CallbackURL=http://localhost:3000/callback.html \
+    LogoutURL=http://localhost:3000/
 ```
 
 ## Updating callback / logout URLs
@@ -74,9 +78,8 @@ aws cloudformation deploy \
 ```bash
 aws cloudformation deploy \
   --template-file cognito-passkey.yaml \
-  --stack-name cognito-passkey \
+  --stack-name YOUR-UNIQUE-NAME-HERE \
   --parameter-overrides \
-    DomainPrefix=my-unique-prefix \
     CallbackURL=https://myapp.example.com/callback \
     LogoutURL=https://myapp.example.com/logout
 ```

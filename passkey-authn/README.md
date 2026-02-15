@@ -250,11 +250,12 @@ For production use, consider:
 
 ### CloudFormation Stack Deployment Fails
 
-**Problem:** `DomainPrefix` already in use or invalid parameter
+**Problem:** Stack creation fails with UserPoolDomain error
 
 **Solution:**
-- Choose a globally unique domain prefix
-- Domain prefix must be lowercase, alphanumeric, and hyphens only
+- Choose a globally unique stack name (used as Cognito domain prefix)
+- Stack name must be lowercase, alphanumeric, and hyphens only
+- Try adding a timestamp or random suffix (e.g., `my-app-20260215`)
 - Check AWS region - some features require specific regions
 
 ### "No authorization code received" Error
