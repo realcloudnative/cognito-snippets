@@ -14,6 +14,8 @@ OUTPUTS=$(aws cloudformation describe-stacks \
 # Extract values
 DOMAIN=$(echo "$OUTPUTS" | jq -r '.[] | select(.OutputKey=="CognitoDomain") | .OutputValue' | sed 's|https://||')
 CLIENT_ID=$(echo "$OUTPUTS" | jq -r '.[] | select(.OutputKey=="AppClientId") | .OutputValue')
+CALLBACK_URL=$(echo "$OUTPUTS" | jq -r '.[] | select(.OutputKey=="CallbackURL") | .OutputValue')
+LOGOUT_URL=$(echo "$OUTPUTS" | jq -r '.[] | select(.OutputKey=="LogoutURL") | .OutputValue')
 
 # Generate config.js
 cat > config.js << EOF
@@ -23,11 +25,13 @@ cat > config.js << EOF
 export const CONFIG = {
     domain: '$DOMAIN',
     clientId: '$CLIENT_ID',
-    redirectUri: 'http://localhost:3000/callback.html',
-    logoutUri: 'http://localhost:3000/'
+    redirectUri: '$CALLBACK_URL',
+    logoutUri: '$LOGOUT_URL'
 };
 EOF
 
 echo "✓ Generated config.js with:"
 echo "  Domain: $DOMAIN"
 echo "  Client ID: $CLIENT_ID"
+echo "  Callback URL: $CALLBACK_URL"
+echo "  Logout URL: $LOGOUT_URL"

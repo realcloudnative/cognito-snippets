@@ -1,5 +1,4 @@
 // Example configuration file
-// Copy this to config.js and replace with your actual values
 // Run ./update-config.sh <stack-name> to auto-generate from CloudFormation
 
 export const CONFIG = {

@@ -231,3 +231,15 @@ Outputs:
   ManagedLoginBrandingId:
     Description: ID of the managed login branding style
     Value: !GetAtt ManagedLoginBranding.ManagedLoginBrandingId
+
+  CallbackURL:
+    Description: OAuth callback URL
+    Value: !Ref CallbackURL
+    Export:
+      Name: !Sub '${AWS::StackName}-CallbackURL'
+
+  LogoutURL:
+    Description: OAuth logout URL
+    Value: !Ref LogoutURL
+    Export:
+      Name: !Sub '${AWS::StackName}-LogoutURL'
