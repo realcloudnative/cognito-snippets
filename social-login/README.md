@@ -52,7 +52,7 @@ aws cloudformation deploy \
     AppleServicesId=com.example.myapp-signin \
     AppleTeamId=ABCDE12345 \
     AppleKeyId=FGHIJ67890 \
-    ApplePrivateKey="$(cat /path/to/AuthKey_FGHIJ67890.p8)" \
+    ApplePrivateKey="$(cat /path/to/AuthKey_FGHIJ67890.p8)" \  # .p8 file downloaded in Apple Setup step 3
     AllowedEmails=alice@example.com,bob@example.com
 ```
 
