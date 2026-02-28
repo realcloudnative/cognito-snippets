@@ -28,6 +28,22 @@ Demonstrates **passkey (WebAuthn) authentication** with Amazon Cognito User Pool
 
 ---
 
+### [Social Login](./social-login/)
+
+Demonstrates **federated social login via Google and Apple** with Amazon Cognito User Pools using Managed Login v2. Users authenticate entirely through their chosen social provider — no Cognito-native passwords.
+
+**Includes:**
+- CloudFormation template with Google IdP, Apple IdP, and a Pre-Token-Generation Lambda
+- Email allowlist enforced at token issuance (invite-only access)
+- Vanilla JavaScript OAuth 2.0 + PKCE implementation
+- Step-by-step Google and Apple developer setup instructions
+
+**Key Learnings:** `AllowAdminCreateUserOnly` does not block federated sign-ups; the Lambda trigger is the real enforcement point.
+
+[View full documentation →](./social-login/README.md)
+
+---
+
 ## Getting Started
 
 Each snippet is self-contained in its own directory with:
@@ -42,7 +58,7 @@ Browse to any snippet directory and follow the README to get started.
 
 - AWS account with appropriate permissions
 - AWS CLI configured (`aws configure`)
-- Modern web browser with WebAuthn support (for passkey examples)
+- Modern web browser with WebAuthn support (for passkey example)
 - Basic knowledge of Amazon Cognito and OAuth 2.0
 
 ## Repository Structure
@@ -54,10 +70,13 @@ cognito-snippets/
 │   ├── cognito-passkey.yaml
 │   ├── index.html
 │   └── ...
+├── social-login/            # Federated social login (Google + Apple)
+│   ├── README.md
+│   ├── cognito-social.yaml
+│   ├── index.html
+│   └── ...
 └── README.md                # This file
 ```
-
-Additional examples for social login, MFA, and custom authentication flows may be added in the future.
 
 ## License
 
