@@ -1,0 +1,352 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Cognito User Pool with federated social login (Google + Apple)
+  using Managed Login v2. Access is restricted to an allowlist of
+  email addresses enforced by a Pre-Token-Generation Lambda trigger.
+
+Parameters:
+  CallbackURL:
+    Type: String
+    Default: http://localhost:3000/callback.html
+    Description: OAuth callback URL for the application
+
+  LogoutURL:
+    Type: String
+    Default: http://localhost:3000/
+    Description: OAuth logout URL for the application
+
+  GoogleClientId:
+    Type: String
+    Description: Google OAuth 2.0 client ID from Google Cloud Console
+
+  GoogleClientSecret:
+    Type: String
+    NoEcho: true
+    Description: Google OAuth 2.0 client secret from Google Cloud Console
+
+  AppleServicesId:
+    Type: String
+    Description: >
+      Apple Services ID (e.g. com.example.myapp) from Apple Developer portal.
+      This is the identifier you created for Sign in with Apple.
+
+  AppleTeamId:
+    Type: String
+    Description: Apple Developer Team ID (10-character string from developer.apple.com)
+
+  AppleKeyId:
+    Type: String
+    Description: Key ID of the Sign in with Apple private key
+
+  ApplePrivateKey:
+    Type: String
+    NoEcho: true
+    Description: >
+      Contents of the .p8 private key file for Sign in with Apple (PEM format).
+      In production, store this in AWS Secrets Manager instead.
+
+  AllowedEmails:
+    Type: String
+    Description: >
+      Comma-separated list of email addresses allowed to sign in.
+      Example: alice@example.com,bob@example.com
+      The Pre-Token-Generation Lambda blocks token issuance for any
+      email not in this list.
+
+Resources:
+
+  # -------------------------------------------------
+  # IAM Role for the allowlist Lambda
+  # -------------------------------------------------
+  AllowlistFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  # -------------------------------------------------
+  # Pre-Token-Generation Lambda — email allowlist check
+  # -------------------------------------------------
+  # This is the enforcement point for the closed-system design.
+  # AllowAdminCreateUserOnly: true prevents direct Cognito self-registration
+  # but does NOT block federated (social) sign-ups — Cognito creates a user
+  # record automatically on first social sign-in. This Lambda blocks token
+  # issuance for any email not in the allowlist, effectively preventing access.
+  AllowlistFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-allowlist"
+      Runtime: python3.13
+      Handler: index.handler
+      Role: !GetAtt AllowlistFunctionRole.Arn
+      Environment:
+        Variables:
+          ALLOWED_EMAILS: !Ref AllowedEmails
+      Code:
+        ZipFile: |
+          import os
+
+          def handler(event, context):
+              allowed = {e.strip().lower() for e in os.environ["ALLOWED_EMAILS"].split(",") if e.strip()}
+              email = (event.get("request", {}).get("userAttributes", {}).get("email") or "").lower()
+
+              if email not in allowed:
+                  raise Exception(f"Access denied: {email} is not on the allowlist")
+
+              # Return event unchanged to allow token issuance
+              return event
+
+  # Grant Cognito permission to invoke the Lambda
+  AllowlistFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt AllowlistFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+
+  # -------------------------------------------------
+  # Cognito User Pool — social login only
+  # -------------------------------------------------
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolTier: ESSENTIALS
+
+      # Allow users to sign in with their email as username
+      UsernameAttributes:
+        - email
+      UsernameConfiguration:
+        CaseSensitive: false
+      AutoVerifiedAttributes:
+        - email
+
+      # No SignInPolicy with PASSWORD or WEB_AUTHN — social providers only.
+      # Cognito still requires a password policy even when passwords are not
+      # used as a sign-in factor; this policy is effectively unreachable.
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 20
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+
+      # Pre-Token-Generation trigger blocks token issuance for non-allowlisted emails.
+      # Note: AllowAdminCreateUserOnly does NOT prevent federated sign-ups —
+      # Cognito creates a user record on first social sign-in regardless.
+      # The Lambda is the actual enforcement point.
+      LambdaConfig:
+        PreTokenGenerationConfig:
+          LambdaArn: !GetAtt AllowlistFunction.Arn
+          LambdaVersion: V2_0
+
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+
+      UserAttributeUpdateSettings:
+        AttributesRequireVerificationBeforeUpdate:
+          - email
+
+      DeletionProtection: INACTIVE
+
+  # -------------------------------------------------
+  # Google Identity Provider
+  # -------------------------------------------------
+  GoogleIdP:
+    Type: AWS::Cognito::UserPoolIdentityProvider
+    Properties:
+      UserPoolId: !Ref UserPool
+      ProviderName: Google
+      ProviderType: Google
+      ProviderDetails:
+        client_id: !Ref GoogleClientId
+        client_secret: !Ref GoogleClientSecret
+        authorize_scopes: "email openid profile"
+      AttributeMapping:
+        email: email
+        name: name
+
+  # -------------------------------------------------
+  # Apple Identity Provider
+  # -------------------------------------------------
+  AppleIdP:
+    Type: AWS::Cognito::UserPoolIdentityProvider
+    DependsOn: GoogleIdP
+    Properties:
+      UserPoolId: !Ref UserPool
+      ProviderName: SignInWithApple
+      ProviderType: SignInWithApple
+      ProviderDetails:
+        client_id: !Ref AppleServicesId
+        team_id: !Ref AppleTeamId
+        key_id: !Ref AppleKeyId
+        private_key: !Ref ApplePrivateKey
+        authorize_scopes: "email name"
+      AttributeMapping:
+        email: email
+        name: name
+
+  # -------------------------------------------------
+  # User Pool Domain — Managed Login v2
+  # -------------------------------------------------
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      UserPoolId: !Ref UserPool
+      Domain: !Ref AWS::StackName
+      ManagedLoginVersion: 2
+
+  # -------------------------------------------------
+  # App Client — social providers only, PKCE flow
+  # -------------------------------------------------
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn:
+      - GoogleIdP
+      - AppleIdP
+    Properties:
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false
+
+      # Refresh token only — no password-based flows
+      ExplicitAuthFlows:
+        - ALLOW_REFRESH_TOKEN_AUTH
+
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - openid
+        - email
+        - profile
+
+      # Only social providers — COGNITO (username/password) is intentionally excluded
+      SupportedIdentityProviders:
+        - Google
+        - SignInWithApple
+
+      CallbackURLs:
+        - !Ref CallbackURL
+      LogoutURLs:
+        - !Ref LogoutURL
+
+      PreventUserExistenceErrors: ENABLED
+
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+
+  # -------------------------------------------------
+  # Managed Login Branding — Custom styling
+  # -------------------------------------------------
+  ManagedLoginBranding:
+    Type: AWS::Cognito::ManagedLoginBranding
+    DependsOn: UserPoolDomain
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientId: !Ref UserPoolClient
+      UseCognitoProvidedValues: false
+      Settings:
+        components:
+          pageBackground:
+            image:
+              enabled: false
+            lightMode:
+              color: 11053bcc
+            darkMode:
+              color: 0f1b2aff
+          form:
+            borderRadius: 8
+            backgroundImage:
+              enabled: false
+          alert:
+            borderRadius: 12
+        componentClasses:
+          buttons:
+            borderRadius: 8
+          input:
+            borderRadius: 8
+          dropDown:
+            borderRadius: 8
+        categories:
+          global:
+            colorSchemeMode: LIGHT
+            pageHeader:
+              enabled: false
+            pageFooter:
+              enabled: false
+            spacingDensity: REGULAR
+          form:
+            sessionTimerDisplay: NONE
+            instructions:
+              enabled: false
+            languageSelector:
+              enabled: false
+            displayGraphics: true
+            location:
+              horizontal: CENTER
+              vertical: CENTER
+          auth:
+            authMethodOrder:
+              - - display: BUTTON
+                  type: FEDERATED
+
+Outputs:
+  UserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref UserPool
+    Export:
+      Name: !Sub '${AWS::StackName}-UserPoolId'
+
+  UserPoolArn:
+    Description: Cognito User Pool ARN
+    Value: !GetAtt UserPool.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-UserPoolArn'
+
+  AppClientId:
+    Description: App Client ID
+    Value: !Ref UserPoolClient
+    Export:
+      Name: !Sub '${AWS::StackName}-AppClientId'
+
+  CognitoDomain:
+    Description: Full Cognito Managed Login domain
+    Value: !Sub "https://${UserPoolDomain}.auth.${AWS::Region}.amazoncognito.com"
+    Export:
+      Name: !Sub '${AWS::StackName}-CognitoDomain'
+
+  LoginURL:
+    Description: URL to the Managed Login page
+    Value: !Sub >-
+      https://${UserPoolDomain}.auth.${AWS::Region}.amazoncognito.com/oauth2/authorize?response_type=code&client_id=${UserPoolClient}&redirect_uri=${CallbackURL}&scope=openid+email+profile
+
+  CallbackURL:
+    Description: OAuth callback URL
+    Value: !Ref CallbackURL
+    Export:
+      Name: !Sub '${AWS::StackName}-CallbackURL'
+
+  LogoutURL:
+    Description: OAuth logout URL
+    Value: !Ref LogoutURL
+    Export:
+      Name: !Sub '${AWS::StackName}-LogoutURL'

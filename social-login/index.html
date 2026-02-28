@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Login Demo</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .card {
+            padding: 24px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+        .card h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .card p {
+            color: #666;
+            line-height: 1.6;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            background: #007bff;
+            color: white;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+        }
+        button.logout {
+            background: #dc3545;
+        }
+        button.logout:hover {
+            background: #c82333;
+        }
+        .user-info {
+            padding: 20px;
+            background: #e7f5ff;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #28a745;
+        }
+        .user-info strong {
+            color: #333;
+        }
+        .user-email {
+            font-size: 18px;
+            color: #007bff;
+            margin: 10px 0;
+        }
+        .user-sub {
+            font-size: 12px;
+            color: #666;
+            font-family: monospace;
+        }
+        .hidden {
+            display: none;
+        }
+        .emoji {
+            font-size: 24px;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Social Login Demo</h1>
+        <p class="subtitle">Sign in with Google or Apple — no passwords required</p>
+
+        <!-- Welcome / Not logged in -->
+        <div id="welcome-screen" class="hidden">
+            <div class="card">
+                <h3><span class="emoji">👋</span>Welcome!</h3>
+                <p>This app uses federated social login via Google and Apple. Your identity is verified by your chosen provider — no separate password needed.</p>
+                <p style="margin-top: 15px; color: #666;">
+                    <strong>Access is invite-only.</strong> Only pre-approved email addresses can sign in.
+                </p>
+            </div>
+
+            <div class="card" style="text-align: center;">
+                <button onclick="auth.login()" style="font-size: 18px; padding: 16px 32px;">
+                    <span class="emoji">🌐</span> Sign In
+                </button>
+            </div>
+        </div>
+
+        <!-- Logged in -->
+        <div id="logged-in-screen" class="hidden">
+            <div class="user-info">
+                <strong>Logged in as:</strong>
+                <div class="user-email" id="user-email"></div>
+                <div class="user-sub" id="user-sub"></div>
+            </div>
+
+            <button class="logout" onclick="auth.logout()">Sign Out</button>
+        </div>
+    </div>
+
+    <script type="module" src="auth.js"></script>
+    <script type="module">
+        import { auth } from './auth.js';
+
+        // Make auth available globally
+        window.auth = auth;
+
+        // Update UI based on auth state
+        function updateUI() {
+            const user = auth.getUser();
+
+            if (user) {
+                document.getElementById('welcome-screen').classList.add('hidden');
+                document.getElementById('logged-in-screen').classList.remove('hidden');
+                document.getElementById('user-email').textContent = user.email || 'No email';
+                document.getElementById('user-sub').textContent = `User ID: ${user.sub}`;
+            } else {
+                document.getElementById('welcome-screen').classList.remove('hidden');
+                document.getElementById('logged-in-screen').classList.add('hidden');
+            }
+        }
+
+        // Initial UI update
+        updateUI();
+    </script>
+</body>
+</html>
