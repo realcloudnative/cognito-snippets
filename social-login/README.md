@@ -14,6 +14,54 @@ Access is **invite-only**: a Pre-Token-Generation Lambda blocks token issuance f
 - A Google Cloud account (for Google Sign-In)
 - An Apple Developer account (for Sign in with Apple)
 
+## Before you start: claim your Cognito domain
+
+The Google and Apple setup steps require your Cognito domain, which is created by CloudFormation. The domain is predictable — it will be `https://<stack-name>.auth.<region>.amazoncognito.com` — but Cognito domain prefixes are **globally unique**, so the name you choose might already be taken.
+
+To avoid configuring Google/Apple and then hitting a name collision during deployment, deploy just the UserPool and Domain first with placeholder IdP credentials:
+
+```bash
+aws cloudformation deploy \
+  --template-file social-login/cognito-social.yaml \
+  --stack-name demo-social-login \
+  --capabilities CAPABILITY_IAM \
+  --parameter-overrides \
+    CallbackURL=http://localhost:3000/callback.html \
+    LogoutURL=http://localhost:3000/ \
+    GoogleClientId=placeholder \
+    GoogleClientSecret=placeholder \
+    AppleServicesId=placeholder \
+    AppleTeamId=AAAAAAAAAA \
+    AppleKeyId=AAAAAAAAAA \
+    ApplePrivateKey="$(openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 2>/dev/null)" \
+    AllowedEmails=placeholder@example.com
+```
+
+> The Apple parameters require syntactically valid values (10-char Team/Key IDs, a PEM private key) even for placeholders — the values above satisfy that. The IdPs will fail to authenticate until you replace them with real credentials in the update step below.
+
+Once the stack is created successfully, your domain is confirmed and reserved. Then complete the Google and Apple setup below and update the stack with real credentials:
+
+```bash
+aws cloudformation deploy \
+  --template-file social-login/cognito-social.yaml \
+  --stack-name demo-social-login \
+  --capabilities CAPABILITY_IAM \
+  --parameter-overrides \
+    GoogleClientId=YOUR_REAL_GOOGLE_CLIENT_ID \
+    GoogleClientSecret=YOUR_REAL_GOOGLE_CLIENT_SECRET \
+    AppleServicesId=com.example.myapp-signin \
+    AppleTeamId=ABCDE12345 \
+    AppleKeyId=FGHIJ67890 \
+    ApplePrivateKey="$(cat /path/to/AuthKey_FGHIJ67890.p8)" \
+    AllowedEmails=alice@example.com,bob@example.com
+```
+
+Your confirmed Cognito domain (substitute into the steps below):
+
+```
+https://demo-social-login.auth.<region>.amazoncognito.com
+```
+
 ## Google Setup
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services** → **Credentials**.
@@ -57,22 +105,7 @@ Access is **invite-only**: a Pre-Token-Generation Lambda blocks token issuance f
 
 ## Deploy
 
-```bash
-aws cloudformation deploy \
-  --template-file social-login/cognito-social.yaml \
-  --stack-name demo-social-login \
-  --capabilities CAPABILITY_IAM \
-  --parameter-overrides \
-    CallbackURL=http://localhost:3000/callback.html \
-    LogoutURL=http://localhost:3000/ \
-    GoogleClientId=YOUR_GOOGLE_CLIENT_ID \
-    GoogleClientSecret=YOUR_GOOGLE_CLIENT_SECRET \
-    AppleServicesId=com.example.myapp-signin \
-    AppleTeamId=ABCDE12345 \
-    AppleKeyId=FGHIJ67890 \
-    ApplePrivateKey="$(cat /path/to/AuthKey_FGHIJ67890.p8)" \
-    AllowedEmails=alice@example.com,bob@example.com
-```
+Follow the two-stage process described in [Before you start](#before-you-start-claim-your-cognito-domain): deploy with placeholders first to claim the domain, complete the Google and Apple setup, then redeploy with real credentials.
 
 > `--capabilities CAPABILITY_IAM` is required because the template creates an IAM role for the Lambda function.
 
