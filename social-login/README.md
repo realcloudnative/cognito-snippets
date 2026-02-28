@@ -123,13 +123,15 @@ Browser                    Cognito Managed Login         Google / Apple
 
 ### `AllowAdminCreateUserOnly: true` does NOT block federated sign-ups
 
-Setting `AllowAdminCreateUserOnly: true` prevents users from directly registering a Cognito-native account (i.e., calling `SignUp` with a username and password). It does **not** prevent Cognito from automatically creating a user record when someone signs in via a social provider for the first time.
+The [API definition](https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_AdminCreateUserConfigType.html) for `AllowAdminCreateUserOnly` says: *"When `true`, only administrators can create new user profiles… users can register themselves and create a new user profile with the `SignUp` operation."* The restriction applies only to the `SignUp` API call. It says nothing about federation.
 
-This means any Google or Apple user can trigger a user record to be created in the User Pool. The allowlist Lambda is the actual enforcement mechanism — it blocks token issuance, but the user record already exists at that point.
+The [federation documentation](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-identity-federation.html) confirms: *"Amazon Cognito creates a user profile for your federated user in its own directory."* This happens regardless of `AllowAdminCreateUserOnly`.
 
 ### The Lambda is the enforcement point — but the user record persists
 
-When a blocked user attempts to sign in, the Lambda raises an exception and no tokens are issued. However, Cognito has already created (or looked up) the user record by the time the Lambda runs. The user appears in the User Pool console but cannot obtain tokens.
+The [Pre-Token-Generation trigger](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-lambda-pre-token-generation.html) runs before tokens are issued. Raising an exception from it blocks the token response, but the user record was already created (or looked up) earlier in the flow. The blocked user appears in the User Pool console but cannot obtain tokens.
+
+An alternative enforcement point is the [Pre-Sign-Up trigger](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-lambda-pre-sign-up.html), which fires *"on self-service sign-up with `SignUp` or first sign-in with a trusted identity provider"* — i.e., before the user record is created. Using Pre-Sign-Up instead would prevent user record creation entirely for blocked emails.
 
 ### Allowlist via environment variable — not suitable for production at scale
 
@@ -139,9 +141,9 @@ The current implementation stores the allowlist as a comma-separated environment
 
 Apple uses asymmetric signing (a `.p8` private key file) to authenticate the client, while Google uses a symmetric client secret. The private key is more sensitive — it is passed as a CloudFormation parameter here for simplicity, but **production deployments should store it in AWS Secrets Manager** and have the Lambda fetch it at runtime.
 
-### Cannot distinguish which provider the user used from standard claims alone
+### The `identities` claim identifies the provider — it is in the ID token
 
-The `id_token` issued by Cognito does not include an `amr` claim or similar field that identifies the social provider. To determine whether a user signed in with Google or Apple, inspect the `identities` attribute on the Cognito user record (available via the Admin API or as a custom attribute in the token if explicitly mapped).
+The [federation documentation](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-identity-federation.html) confirms: *"Amazon Cognito records information about your federated user's identity to an attribute, and a claim in the ID token, called `identities`. This claim contains your user's provider and their unique ID from the provider."* So the provider (Google vs Apple) is available in the ID token as the `identities` claim — no Admin API call needed. Note that `identities` is not a standard OIDC claim and you cannot modify it directly.
 
 ## Production Considerations
 
