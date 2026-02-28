@@ -30,13 +30,13 @@ Demonstrates **passkey (WebAuthn) authentication** with Amazon Cognito User Pool
 
 ### [Social Login](./social-login/)
 
-Demonstrates **federated social login via Google and Apple** with Amazon Cognito User Pools using Managed Login v2. Users authenticate entirely through their chosen social provider — no Cognito-native passwords.
+Demonstrates **federated social login via Google** with Amazon Cognito User Pools using Managed Login v2. Users authenticate entirely through Google — no Cognito-native passwords.
 
 **Includes:**
-- CloudFormation template with Google IdP, Apple IdP, and a Pre-Token-Generation Lambda
+- CloudFormation template with Google IdP and a Pre-Token-Generation Lambda
 - Email allowlist enforced at token issuance (invite-only access)
 - Vanilla JavaScript OAuth 2.0 + PKCE implementation
-- Step-by-step Google and Apple developer setup instructions
+- Step-by-step Google developer setup instructions
 
 **Key Learnings:** `AllowAdminCreateUserOnly` does not block federated sign-ups; the Lambda trigger is the real enforcement point.
 

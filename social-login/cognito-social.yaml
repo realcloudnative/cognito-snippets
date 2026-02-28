@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
-  Cognito User Pool with federated social login (Google + Apple)
+  Cognito User Pool with federated social login (Google)
   using Managed Login v2. Access is restricted to an allowlist of
   email addresses enforced by a Pre-Token-Generation Lambda trigger.
 
@@ -23,27 +23,6 @@ Parameters:
     Type: String
     NoEcho: true
     Description: Google OAuth 2.0 client secret from Google Cloud Console
-
-  AppleServicesId:
-    Type: String
-    Description: >
-      Apple Services ID (e.g. com.example.myapp) from Apple Developer portal.
-      This is the identifier you created for Sign in with Apple.
-
-  AppleTeamId:
-    Type: String
-    Description: Apple Developer Team ID (10-character string from developer.apple.com)
-
-  AppleKeyId:
-    Type: String
-    Description: Key ID of the Sign in with Apple private key
-
-  ApplePrivateKey:
-    Type: String
-    NoEcho: true
-    Description: >
-      Contents of the .p8 private key file for Sign in with Apple (PEM format).
-      In production, store this in AWS Secrets Manager instead.
 
   AllowedEmails:
     Type: String
@@ -181,26 +160,6 @@ Resources:
         name: name
 
   # -------------------------------------------------
-  # Apple Identity Provider
-  # -------------------------------------------------
-  AppleIdP:
-    Type: AWS::Cognito::UserPoolIdentityProvider
-    DependsOn: GoogleIdP
-    Properties:
-      UserPoolId: !Ref UserPool
-      ProviderName: SignInWithApple
-      ProviderType: SignInWithApple
-      ProviderDetails:
-        client_id: !Ref AppleServicesId
-        team_id: !Ref AppleTeamId
-        key_id: !Ref AppleKeyId
-        private_key: !Ref ApplePrivateKey
-        authorize_scopes: "email name"
-      AttributeMapping:
-        email: email
-        name: name
-
-  # -------------------------------------------------
   # User Pool Domain — Managed Login v2
   # -------------------------------------------------
   UserPoolDomain:
@@ -215,9 +174,7 @@ Resources:
   # -------------------------------------------------
   UserPoolClient:
     Type: AWS::Cognito::UserPoolClient
-    DependsOn:
-      - GoogleIdP
-      - AppleIdP
+    DependsOn: GoogleIdP
     Properties:
       UserPoolId: !Ref UserPool
       GenerateSecret: false
@@ -237,7 +194,6 @@ Resources:
       # Only social providers — COGNITO (username/password) is intentionally excluded
       SupportedIdentityProviders:
         - Google
-        - SignInWithApple
 
       CallbackURLs:
         - !Ref CallbackURL
