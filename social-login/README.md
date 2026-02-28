@@ -174,6 +174,12 @@ The current implementation stores the allowlist as a comma-separated environment
 
 Apple uses asymmetric signing (a `.p8` private key file) to authenticate the client, while Google uses a symmetric client secret. The private key is more sensitive — it is passed as a CloudFormation parameter here for simplicity, but **production deployments should store it in AWS Secrets Manager** and have the Lambda fetch it at runtime.
 
+### "Sign in" vs "authorize" — OAuth framing vs user experience
+
+The Google popup says "authorize this app to access your profile and email" — which is technically accurate: this is an OAuth 2.0 authorization flow, not an authentication protocol in the strict sense. However, Google's own [branding guidelines](https://developers.google.com/identity/branding-guidelines) require the button to say "Sign in with Google", because from the user's perspective the end result is that they are signed in to your app. Cognito Managed Login also renders "Sign in with Google" on its page.
+
+Both framings are defensible — authorization is what happens mechanically, sign-in is what the user experiences. This is a known and intentional ambiguity in how OAuth 2.0 is used for identity.
+
 ### The `identities` claim identifies the provider — it is in the ID token
 
 The [federation documentation](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-identity-federation.html) confirms: *"Amazon Cognito records information about your federated user's identity to an attribute, and a claim in the ID token, called `identities`. This claim contains your user's provider and their unique ID from the provider."* So the provider (Google vs Apple) is available in the ID token as the `identities` claim — no Admin API call needed. Note that `identities` is not a standard OIDC claim and you cannot modify it directly.
